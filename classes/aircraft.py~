@@ -1,0 +1,231 @@
+#---Class structure for this----------------------
+from class_str.grid.class_structure import grid
+from input.read_geomach_surface_points import read_geomach_surface_points
+from functions.compute_aircraft_loads import compute_aerodynamic_loads
+
+class aircraft:
+    
+    def __init__(self):
+    
+        self.type =  'aircraft'
+        self.no_of_fuselages = 1
+        self.no_of_wings = 2
+        self.span = 0.0
+        self.wing_box_start_x = 0.0
+        self.wing_box_end_x = 0.0
+        self.wing_box_start_z = 0.0
+        self.wing_box_end_z = 0.0
+        self.MTOW = 1.0
+        self.main_wing_section = []
+	self.pointlist = []
+
+
+    def import_from_suave(self,aircraft):
+        print
+
+
+    def read_surface_discretization(self,mesh_filename):
+        self.pointlist =read_geomach_surface_points(mesh_filename)
+
+        #mark the points as wing or fuselage
+        for i in range(0,len(self.pointlist)):
+    
+            if(self.pointlist[i].x[0]>self.wing_box_start_x) and (self.pointlist[i].x[0]<self.wing_box_end_x) and (self.pointlist[i].x[2]>self.wing_box_start_z) and (self.pointlist[i].x[2]<self.wing_box_end_z):
+    
+                self.pointlist[i].part = "w"
+
+
+            elif(self.pointlist[i].x[0]>self.fuselage_start_x) and (self.pointlist[i].x[0]<self.fuselage_end_x) and (self.pointlist[i].x[2]>self.fuselage_start_z) and (self.pointlist[i].x[2]<self.fuselage_end_z):
+    
+                self.pointlist[i].part = "f"
+
+
+
+	    else:
+		self.pointlist[i].part = "i"
+
+
+    def visualize_loads(self,tec_file):
+        print "Writing tecplot loads file"
+        
+        #----orig file-----------------------------------------------
+        #-------------------------------------------------------------------
+        
+        #-----writing the headers-----
+        
+        mesh_def = open(tec_file,"wb")
+        
+        mesh_def.write("TITLE = \"Visualization of loads\"")
+        mesh_def.write("\n")
+        mesh_def.write("VARIABLES = \"x\", \"y\", \"z\", \"force x\",\"force y\",\"force z\",")
+        mesh_def.write("\n")
+        mesh_def.write("ZONE NODES=")
+        mesh_def.write(format(len(self.pointlist)))
+        #mesh_def.write(", ELEMENTS=")
+        #mesh_def.write(format(len(self.elemlist)))
+        #    mesh_def.write("\n")
+        mesh_def.write(", DATAPACKING=POINT")
+        mesh_def.write("\n")
+        
+        
+        #---------writing the points----------------------
+        # Write x coordinates.
+        
+        
+        
+        for i in range(0,len(self.pointlist)):
+            mesh_def.write(format(self.pointlist[i].x[0]))
+            mesh_def.write("\t")
+            mesh_def.write(format(self.pointlist[i].x[1]))
+            mesh_def.write("\t")
+            mesh_def.write(format(self.pointlist[i].x[2]))
+            mesh_def.write("\t")
+            mesh_def.write(format(self.pointlist[i].f[0]))
+            mesh_def.write("\t")
+            mesh_def.write(format(self.pointlist[i].f[1]))
+            mesh_def.write("\t")
+            mesh_def.write(format(self.pointlist[i].f[2]))
+            mesh_def.write("\n")
+
+
+
+
+
+
+
+#        #----------writing the elements----------------------
+#
+#        # Write the element connectivity (1-based).
+#
+#        for i in range(0,len(self.elemlist)):
+#            mesh_def.write(format(self.elemlist[i].g[0]))
+#            mesh_def.write("  ")
+#            mesh_def.write(format(self.elemlist[i].g[1]))
+#            mesh_def.write("  ")
+#            mesh_def.write(format(self.elemlist[i].g[2]))
+#            mesh_def.write("  ")
+#            if(self.elemlist[i].type=='CTRIA3'):
+#                
+#                mesh_def.write(format(self.elemlist[i].g[2]))
+#                mesh_def.write("\n")
+#            
+#            if(self.elemlist[i].type=='CQUAD4'):
+#                
+#                mesh_def.write(format(self.elemlist[i].g[3]))
+#                mesh_def.write("\n")
+
+
+
+
+
+        mesh_def.close()
+
+
+
+
+    def compute(self):
+        #loop over the wings to get the wing box
+        min_x = 0.0
+        min_z = 0.0
+        
+        max_x = 0.0
+        max_z = 0.0
+    
+        for i in range(0,self.main_wing.no_of_sections):
+
+	    
+	    
+            if (self.main_wing.main_wing_section[i].root_origin[0]>max_x) :
+                max_x = self.main_wing.main_wing_section[i].root_origin[0]+0.75*self.main_wing.main_wing_section[i].root_chord
+
+            if (self.main_wing.main_wing_section[i].root_origin[0]>max_x) :
+                max_x = self.main_wing.main_wing_section[i].tip_origin[0]+0.75*self.main_wing.main_wing_section[i].tip_chord
+
+            if (self.main_wing.main_wing_section[i].root_origin[0]<min_x) :
+                min_x = self.main_wing.main_wing_section[i].root_origin[0] -0.25*self.main_wing.main_wing_section[i].root_chord
+
+            if (self.main_wing.main_wing_section[i].root_origin[0]<min_x) :
+                min_x = self.main_wing.main_wing_section[i].tip_origin[0]-0.25*self.main_wing.main_wing_section[i].tip_chord
+
+
+
+            if (self.main_wing.main_wing_section[i].root_origin[0]>max_z) :
+                max_z = self.main_wing.main_wing_section[i].root_origin[2]
+
+            if (self.main_wing.main_wing_section[i].root_origin[0]>max_z) :
+                max_z = self.main_wing.main_wing_section[i].tip_origin[2]
+        
+            if (self.main_wing.main_wing_section[i].root_origin[0]<min_z) :
+                min_z = self.main_wing.main_wing_section[i].root_origin[2]
+            
+            if (self.main_wing.main_wing_section[i].root_origin[0]<min_z) :
+                min_z = self.main_wing.main_wing_section[i].tip_origin[2]
+
+
+
+        self.wing_box_start_x = min_x
+        self.wing_box_end_x = max_x
+        self.wing_box_start_z = min_z
+        self.wing_box_end_z = max_z
+
+
+        self.fuselage_start_x = 0.0
+        self.fuselage_end_x = self.fuselage_start_x + 0.9*self.fuselage.length
+        self.fuselage_start_z = 0.0
+        self.fuselage_end_z = self.fuselage.diameter/2.0
+
+
+	 
+
+
+class wing:
+    
+    
+    def __init__(self):
+        
+        self.type =  'wing_section'
+        self.no_of_wing_sections = 0
+        self.root_chord = 1.0
+        self.tip_chord = 1.0
+        self.span = 1.0
+        self.sweep = 0.0
+        self.origin = [0.0,0.0,0.0]
+        self.root_origin = [0.0,0.0,0.0]
+        self.tip_origin = [0.0,0.0,0.0]
+        self.airfoil = "rae2012"
+        self.element_area = 1.0
+
+#     def compute_wing_box(self):
+#        print
+
+
+
+
+class wing_section:
+
+
+    def __init__(self):
+    
+        self.type =  'wing_section'
+        self.root_chord = 1.0
+        self.tip_chord = 1.0
+        self.span = 1.0
+        self.sweep = 0.0
+        self.root_origin = [0.0,0.0,0.0]
+        self.tip_origin = [0.0,0.0,0.0]
+
+
+
+
+class fuselage:
+    
+    
+    def __init__(self):
+        
+        self.type =  'fuselage'
+        self.diameter = 1.0
+        self.length = 1.0
+        self.origin = [0.0,0.0,0.0]
+
+
+

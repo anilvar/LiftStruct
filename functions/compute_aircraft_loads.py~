@@ -1,0 +1,62 @@
+import numpy as np
+def compute_aerodynamic_loads(aircraft):
+
+    #Unpack
+
+    MTOW = aircraft.MTOW
+    span = aircraft.main_wing.span
+    no_of_gridelements_chordwise = aircraft.no_of_gridelements_chordwise
+#    no_of_grid_elements_spanwise = aircraft.no_of_grid_elements_spanwise
+
+    half_lift =  MTOW/2.0
+    half_span =  span/2.0
+
+    max_lift = 2.0*half_lift/span
+   
+
+
+    #loop over the points
+
+    for i in range(0,len(aircraft.pointlist)):
+
+        element_lift = 0.0
+        if(aircraft.pointlist[i].part=="w"):
+            relative_z = aircraft.pointlist[i].x[2] - aircraft.main_wing.main_wing_section[0].root_origin[2]
+
+	    
+            current_span = 0.0
+            current_rchord = 0.0
+            current_tchord = 0.0
+            for j  in range(0,aircraft.main_wing.no_of_sections):
+                prev_span = current_span
+                current_span = current_span + aircraft.main_wing.main_wing_section[j].span
+                current_rchord = aircraft.main_wing.main_wing_section[j].root_chord
+                current_tchord = aircraft.main_wing.main_wing_section[j].tip_chord
+
+		
+
+                if aircraft.pointlist[i].x[0]>prev_span and aircraft.pointlist[i].x[0]<current_span:
+                    current_taper = current_tchord/current_rchord
+                    current_z_local = aircraft.pointlist[i].x[2] - aircraft.main_wing.main_wing_section[j].root_origin[2]
+                    current_chord = current_z_local/aircraft.main_wing.main_wing_section[j].span * current_taper
+                    current_leading_edge = aircraft.main_wing.main_wing_section[j].root_origin + current_z_local*np.tan(aircraft.main_wing.main_wing_section[j].sweep)
+                    current_x_local = aircraft.pointlist[i].x[0] - current_leading_edge
+                    spanwise_lift = (1-current_z_local/aircraft.main_wing.span)*max_lift
+                    chordwise_lift = spanwise_lift/current_chord
+                    
+                    element_lift = chordwise_lift * aircraft.main_wing.element_area
+                    
+                    aircraft.pointlist[i].f[0] = 0.0
+            	    aircraft.pointlist[i].f[1] = element_lift
+	    	    aircraft.pointlist[i].f[2] = 0.0
+                    current_section = j
+                    break
+                        
+	    
+	    print aircraft.pointlist[i].f[1]
+            #aircraft.pointlist[i].f[0] = 0.0
+            #aircraft.pointlist[i].f[1] = element_lift
+	    #aircraft.pointlist[i].f[2] = 0.0
+
+
+
