@@ -1,2 +1,2 @@
-# pyCADOPT
-A multifidelity framework for aircraft design using SUAVE, GeoMach and TACS
+# 
+A multifidelity glue framework to connect structural tools like Nastran to SUAVE for multi-fidelity conceptual aircraft design.
